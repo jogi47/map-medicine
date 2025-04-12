@@ -347,19 +347,22 @@ server.tool(
 // Start the server
 async function startServer() {
   try {
-    console.log('Starting Medicine MCP Server...');
+    console.log('\n-----------------------------------------------------');
+    console.log('|         STARTING MEDICINE MCP SERVER               |');
+    console.log('-----------------------------------------------------\n');
     
     // Option 1: Use STDIO transport (for AI agent integration)
     if (process.env.TRANSPORT === 'stdio') {
-      console.log('Using STDIO transport for MCP server...');
+      console.log('🔄 Using STDIO transport for MCP server...');
       const transport = new StdioServerTransport();
       await server.connect(transport);
-      console.log('MCP Server connected via STDIO transport');
+      console.log('✅ MCP Server connected via STDIO transport');
     } 
     // Option 2: Use custom HTTP transport (for testing/debugging)
     else {
-      console.log('Using HTTP transport for MCP server...');
       const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+      console.log(`🔄 Using HTTP transport for MCP server on port ${port}...`);
+      
       const app = express();
       app.use(express.json());
       
@@ -367,21 +370,25 @@ async function startServer() {
       
       // MCP endpoint
       app.post('/mcp', async (req, res) => {
+        console.log('📥 Received MCP request:', JSON.stringify(req.body).substring(0, 100) + '...');
         try {
           if (requestHandler) {
             const response = await requestHandler(req.body);
+            console.log('📤 Sending MCP response:', JSON.stringify(response).substring(0, 100) + '...');
             res.status(200).json(response);
           } else {
+            console.error('❌ MCP Server not ready - no requestHandler available');
             res.status(503).json({ error: 'MCP Server not ready' });
           }
         } catch (error) {
-          console.error('Error handling MCP request:', error);
+          console.error('❌ Error handling MCP request:', error);
           res.status(500).json({ error: 'Internal server error' });
         }
       });
       
       // Documentation endpoint
       app.get('/', (req, res) => {
+        console.log('📄 Documentation endpoint accessed');
         res.status(200).json({
           name: 'Medicine MCP Server',
           description: 'An MCP-compliant server providing medicine information by symptoms',
@@ -391,6 +398,7 @@ async function startServer() {
       
       // Health check endpoint
       app.get('/health', (req, res) => {
+        console.log('❤️ Health check endpoint accessed');
         res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
       });
       
@@ -398,7 +406,9 @@ async function startServer() {
       const httpServer = http.createServer(app);
       await new Promise<void>((resolve) => {
         httpServer.listen(port, () => {
-          console.log(`HTTP server listening on port ${port}`);
+          console.log('\n-----------------------------------------------------');
+          console.log(`🚀 HTTP server listening on port ${port}`);
+          console.log('-----------------------------------------------------\n');
           resolve();
         });
       });
@@ -406,18 +416,22 @@ async function startServer() {
       // Define custom transport
       const httpTransport = {
         receive: (handler: (message: any) => Promise<any>) => {
+          console.log('🔌 MCP Server: Registered request handler');
           requestHandler = handler;
         },
         start: async () => {
+          console.log('▶️ MCP Server Transport: Start method called');
           // Already started the HTTP server above
           return;
         },
         send: async () => {
+          console.log('📩 MCP Server Transport: Send method called');
           // We don't need to implement this for the HTTP transport as responses
           // are sent directly in the request handler
           return;
         },
         close: async () => {
+          console.log('🛑 MCP Server Transport: Close method called');
           // Close the HTTP server when needed
           return new Promise<void>((resolve, reject) => {
             httpServer.close((err) => {
@@ -429,14 +443,18 @@ async function startServer() {
       };
       
       // Connect MCP server to our HTTP transport
+      console.log('🔄 Connecting MCP server to HTTP transport...');
       await server.connect(httpTransport);
       
-      console.log(`MCP Server listening on http://localhost:${port}`);
+      console.log('\n-----------------------------------------------------');
+      console.log(`✅ MCP Server listening on http://localhost:${port}`);
+      console.log('-----------------------------------------------------\n');
     }
     
-    console.log(`Loaded ${medicineService.getAllMedicines().length} medicines`);
+    console.log(`📋 Loaded ${medicineService.getAllMedicines().length} medicines`);
   } catch (error) {
-    console.error('Error starting MCP server:', error);
+    console.error('\n❌❌❌ ERROR STARTING MCP SERVER ❌❌❌');
+    console.error(error);
     process.exit(1);
   }
 }

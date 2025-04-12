@@ -10,7 +10,11 @@
     "serve": "node dist/mcp-server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "inspect": "cross-env TRANSPORT=stdio npx @modelcontextprotocol/inspector node dist/mcp-server.js",
-    "inspect-dev": "cross-env TRANSPORT=stdio npx @modelcontextprotocol/inspector ts-node --transpile-only src/mcp-server.ts"
+    "inspect-dev": "cross-env TRANSPORT=stdio npx @modelcontextprotocol/inspector ts-node --transpile-only src/mcp-server.ts",
+    "inspect-dev-web": "npx @modelcontextprotocol/inspector ts-node --transpile-only src/mcp-server.ts",
+    "debug-inspect": "./debug-inspect.sh",
+    "check-port": "./check-port.sh",
+    "server-direct": "./run-server-direct.sh"
   },
   "keywords": [],
   "author": "",
