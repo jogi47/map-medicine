@@ -9,8 +9,8 @@
     "build": "tsc",
     "serve": "node dist/mcp-server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "inspect": "npx @modelcontextprotocol/inspector node dist/mcp-server.js",
-    "inspect-dev": "npx @modelcontextprotocol/inspector ts-node --transpile-only src/mcp-server.ts"
+    "inspect": "cross-env TRANSPORT=stdio npx @modelcontextprotocol/inspector node dist/mcp-server.js",
+    "inspect-dev": "cross-env TRANSPORT=stdio npx @modelcontextprotocol/inspector ts-node --transpile-only src/mcp-server.ts"
   },
   "keywords": [],
   "author": "",
@@ -32,6 +32,7 @@
   },
   "devDependencies": {
     "@modelcontextprotocol/inspector": "^0.8.2",
+    "cross-env": "^7.0.3",
     "ts-node-dev": "^2.0.0"
   }
 }

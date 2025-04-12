@@ -351,12 +351,14 @@ async function startServer() {
     
     // Option 1: Use STDIO transport (for AI agent integration)
     if (process.env.TRANSPORT === 'stdio') {
+      console.log('Using STDIO transport for MCP server...');
       const transport = new StdioServerTransport();
       await server.connect(transport);
       console.log('MCP Server connected via STDIO transport');
     } 
     // Option 2: Use custom HTTP transport (for testing/debugging)
     else {
+      console.log('Using HTTP transport for MCP server...');
       const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
       const app = express();
       app.use(express.json());
