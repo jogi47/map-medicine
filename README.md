@@ -115,3 +115,23 @@ interface Medicine {
 ## License
 
 MIT
+
+## Debugging with MCP Inspector
+
+This project includes the MCP Inspector for testing and debugging. To use it:
+
+
+
+For more details, see [Inspector Documentation](docs/inspector.md).
+
+
+## Debugging with MCP Inspector
+
+This project includes the MCP Inspector for testing and debugging. To use it:
+
+```bash
+npm run inspect-dev
+```
+
+For more details, see [Inspector Documentation](docs/inspector.md).
+

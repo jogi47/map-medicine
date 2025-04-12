@@ -344,67 +344,6 @@ server.tool(
   }
 );
 
-// Create a custom HTTP transport using Express
-class CustomHttpServerTransport {
-  private server: http.Server;
-  private port: number;
-  private mcpHandler: (req: express.Request, res: express.Response) => Promise<void>;
-
-  constructor(options: { port?: number } = {}) {
-    this.port = options.port || 3000;
-    this.mcpHandler = async () => {};
-    
-    const app = express();
-    app.use(express.json());
-    
-    // MCP endpoint
-    app.post('/mcp', async (req, res) => {
-      try {
-        await this.mcpHandler(req, res);
-      } catch (error) {
-        console.error('Error handling MCP request:', error);
-        res.status(500).json({ error: 'Internal server error' });
-      }
-    });
-    
-    // Documentation endpoint
-    app.get('/', (req, res) => {
-      res.status(200).json({
-        name: 'Medicine MCP Server',
-        description: 'An MCP-compliant server providing medicine information by symptoms',
-        version: '1.0.0'
-      });
-    });
-    
-    // Health check endpoint
-    app.get('/health', (req, res) => {
-      res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
-    });
-    
-    this.server = http.createServer(app);
-  }
-
-  async connectServer(handleRequest: (req: express.Request, res: express.Response) => Promise<void>): Promise<void> {
-    this.mcpHandler = handleRequest;
-    
-    return new Promise((resolve) => {
-      this.server.listen(this.port, () => {
-        console.log(`HTTP transport listening on port ${this.port}`);
-        resolve();
-      });
-    });
-  }
-
-  async close(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.server.close((err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    });
-  }
-}
-
 // Start the server
 async function startServer() {
   try {
@@ -419,26 +358,76 @@ async function startServer() {
     // Option 2: Use custom HTTP transport (for testing/debugging)
     else {
       const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
-      const transport = new CustomHttpServerTransport({ port });
+      const app = express();
+      app.use(express.json());
       
-      // Implement a custom handler for HTTP requests
-      await transport.connectServer(async (req, res) => {
-        const requestBody = req.body;
-        
-        // Process the request using the MCP server
+      let requestHandler: any = null;
+      
+      // MCP endpoint
+      app.post('/mcp', async (req, res) => {
         try {
-          // This is a simplified handler - in a real implementation you would
-          // need to properly handle the MCP protocol over HTTP
-          res.status(200).json({ 
-            status: 'ok',
-            message: 'MCP Server received your request',
-            request: requestBody
-          });
+          if (requestHandler) {
+            const response = await requestHandler(req.body);
+            res.status(200).json(response);
+          } else {
+            res.status(503).json({ error: 'MCP Server not ready' });
+          }
         } catch (error) {
-          console.error('Error processing MCP request:', error);
+          console.error('Error handling MCP request:', error);
           res.status(500).json({ error: 'Internal server error' });
         }
       });
+      
+      // Documentation endpoint
+      app.get('/', (req, res) => {
+        res.status(200).json({
+          name: 'Medicine MCP Server',
+          description: 'An MCP-compliant server providing medicine information by symptoms',
+          version: '1.0.0'
+        });
+      });
+      
+      // Health check endpoint
+      app.get('/health', (req, res) => {
+        res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+      });
+      
+      // Start HTTP server
+      const httpServer = http.createServer(app);
+      await new Promise<void>((resolve) => {
+        httpServer.listen(port, () => {
+          console.log(`HTTP server listening on port ${port}`);
+          resolve();
+        });
+      });
+      
+      // Define custom transport
+      const httpTransport = {
+        receive: (handler: (message: any) => Promise<any>) => {
+          requestHandler = handler;
+        },
+        start: async () => {
+          // Already started the HTTP server above
+          return;
+        },
+        send: async () => {
+          // We don't need to implement this for the HTTP transport as responses
+          // are sent directly in the request handler
+          return;
+        },
+        close: async () => {
+          // Close the HTTP server when needed
+          return new Promise<void>((resolve, reject) => {
+            httpServer.close((err) => {
+              if (err) reject(err);
+              else resolve();
+            });
+          });
+        }
+      };
+      
+      // Connect MCP server to our HTTP transport
+      await server.connect(httpTransport);
       
       console.log(`MCP Server listening on http://localhost:${port}`);
     }
